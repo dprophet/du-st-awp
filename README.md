@@ -1,1 +1,3 @@
-# du-st-awp
+# Shadow Templar AWP script
+
+TODO: Needs updating
