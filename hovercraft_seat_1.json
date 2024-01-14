@@ -1,0 +1,785 @@
+{
+    "slots": {
+        "-1": {
+            "name": "unit",
+            "type": {
+                "methods": [],
+                "events": []
+            }
+        },
+        "-3": {
+            "name": "player",
+            "type": {
+                "methods": [],
+                "events": []
+            }
+        },
+        "-2": {
+            "name": "construct",
+            "type": {
+                "methods": [],
+                "events": []
+            }
+        },
+        "-4": {
+            "name": "system",
+            "type": {
+                "methods": [],
+                "events": []
+            }
+        },
+        "0": {
+            "name": "core",
+            "type": {
+                "methods": [],
+                "events": []
+            }
+        },
+        "-5": {
+            "name": "library",
+            "type": {
+                "methods": [],
+                "events": []
+            }
+        },
+        "1": {
+            "name": "slot2",
+            "type": {
+                "methods": [],
+                "events": []
+            }
+        },
+        "2": {
+            "name": "slot3",
+            "type": {
+                "methods": [],
+                "events": []
+            }
+        },
+        "3": {
+            "name": "slot4",
+            "type": {
+                "methods": [],
+                "events": []
+            }
+        },
+        "4": {
+            "name": "slot5",
+            "type": {
+                "methods": [],
+                "events": []
+            }
+        },
+        "5": {
+            "name": "slot6",
+            "type": {
+                "methods": [],
+                "events": []
+            }
+        },
+        "6": {
+            "name": "slot7",
+            "type": {
+                "methods": [],
+                "events": []
+            }
+        },
+        "7": {
+            "name": "slot8",
+            "type": {
+                "methods": [],
+                "events": []
+            }
+        },
+        "8": {
+            "name": "slot9",
+            "type": {
+                "methods": [],
+                "events": []
+            }
+        },
+        "9": {
+            "name": "slot10",
+            "type": {
+                "methods": [],
+                "events": []
+            }
+        },
+        "10": {
+            "name": "slot11",
+            "type": {
+                "methods": [],
+                "events": []
+            }
+        },
+        "11": {
+            "name": "slot12",
+            "type": {
+                "methods": [],
+                "events": []
+            }
+        },
+        "12": {
+            "name": "slot13",
+            "type": {
+                "methods": [],
+                "events": []
+            }
+        },
+        "13": {
+            "name": "slot14",
+            "type": {
+                "methods": [],
+                "events": []
+            }
+        },
+        "14": {
+            "name": "slot15",
+            "type": {
+                "methods": [],
+                "events": []
+            }
+        },
+        "15": {
+            "name": "slot16",
+            "type": {
+                "methods": [],
+                "events": []
+            }
+        },
+        "16": {
+            "name": "slot17",
+            "type": {
+                "methods": [],
+                "events": []
+            }
+        },
+        "17": {
+            "name": "slot18",
+            "type": {
+                "methods": [],
+                "events": []
+            }
+        },
+        "18": {
+            "name": "slot19",
+            "type": {
+                "methods": [],
+                "events": []
+            }
+        },
+        "19": {
+            "name": "slot20",
+            "type": {
+                "methods": [],
+                "events": []
+            }
+        },
+        "20": {
+            "name": "slot21",
+            "type": {
+                "methods": [],
+                "events": []
+            }
+        }
+    },
+    "handlers": [
+        {
+            "key": "0",
+            "filter": {
+                "slotKey": "-1",
+                "signature": "onStart()",
+                "args": []
+            },
+            "code": "-- category panel display helpers\n_autoconf = {}\n_autoconf.panels = {}\n_autoconf.panels_size = 0\n_autoconf.displayCategoryPanel = function(elements, size, title, type, widgetPerData)\n    widgetPerData = widgetPerData or false -- default to one widget for all data\n    if size > 0 then\n        local panel = system.createWidgetPanel(title)\n        local widget\n        if not widgetPerData then\n            widget = system.createWidget(panel, type)\n        end\n        for i = 1, size do\n            if widgetPerData then\n                widget = system.createWidget(panel, type)\n            end\n            system.addDataToWidget(elements[i].getWidgetDataId(), widget)\n        end\n        _autoconf.panels_size = _autoconf.panels_size + 1\n        _autoconf.panels[_autoconf.panels_size] = panel\n    end\nend\n_autoconf.hideCategoryPanels = function()\n    for i=1,_autoconf.panels_size do\n        system.destroyWidgetPanel(_autoconf.panels[i])\n    end\nend\n-- Proxy array to access auto-plugged slots programmatically\n\natmofueltank = {}\natmofueltank_size = 0\n\nspacefueltank = {}\nspacefueltank_size = 0\n\nrocketfueltank = {}\nrocketfueltank_size = 0\n\nweapon = {}\nweapon_size = 0\n\nradar = {}\nradar_size = 0\n-- End of auto-generated code\npitchInput = 0\npitchInputFromDevice = 0\nrollInput = 0\nyawInput = 0\nverticalStrafeInput = 0\nlateralStrafeInput = 0\nbrakeInput = 0\ngoingBack = false\ngoingForward = false\nshiftPressed = false\njumpDelta = 0\nbaseAcceleration = 0.8 --export: Acceleration provided when 'forward' is hit, expressed in g\n\nNav = Navigator.new(system, core, unit)\nNav.axisCommandManager:setupCustomTargetSpeedRanges(axisCommandId.longitudinal, {100, 500, 1000, 5000})\nNav.axisCommandManager:setTargetGroundAltitude(6)\n\n-- Parenting widget\nparentingPanelId = system.createWidgetPanel(\"Docking\")\nparentingWidgetId = system.createWidget(parentingPanelId,\"parenting\")\nsystem.addDataToWidget(unit.getWidgetDataId(),parentingWidgetId)\n\n-- Combat stress widget\ncoreCombatStressPanelId = system.createWidgetPanel(\"Core combat stress\")\ncoreCombatStressgWidgetId = system.createWidget(coreCombatStressPanelId,\"core_stress\")\nsystem.addDataToWidget(core.getWidgetDataId(),coreCombatStressgWidgetId)\n\n-- element widgets\n-- For now we have to alternate between PVP and non-PVP widgets to have them on the same side.\n_autoconf.displayCategoryPanel(weapon, weapon_size, \"Weapons\", \"weapon\", true)\ncore.showWidget()\n_autoconf.displayCategoryPanel(radar, radar_size, \"Periscope\", \"periscope\")\nplaceRadar = true\nif atmofueltank_size > 0 then\n    _autoconf.displayCategoryPanel(atmofueltank, atmofueltank_size, \"Atmo Fuel\", \"fuel_container\")\n    if placeRadar then\n        _autoconf.displayCategoryPanel(radar, radar_size, \"Radar\", \"radar\")\n        placeRadar = false\n    end\nend\nif spacefueltank_size > 0 then\n    _autoconf.displayCategoryPanel(spacefueltank, spacefueltank_size, \"Space Fuel\", \"fuel_container\")\n    if placeRadar then\n        _autoconf.displayCategoryPanel(radar, radar_size, \"Radar\", \"radar\")\n        placeRadar = false\n    end\nend\n_autoconf.displayCategoryPanel(rocketfueltank, rocketfueltank_size, \"Rocket Fuel\", \"fuel_container\")\nif placeRadar then -- We either have only rockets or no fuel tanks at all, uncommon for usual vessels\n    _autoconf.displayCategoryPanel(radar, radar_size, \"Radar\", \"radar\")\n    placeRadar = false\nend\nif antigrav ~= nil then antigrav.showWidget() end\nif gyro ~= nil then gyro.showWidget() end\n\nthrottleStep = 0.25 --export: When pressing the SpeedUp/SpeedDown buttons, this step will be using to increment/decrement the throttle<br>Valid values: From 0.01 to 1\nthrottleStep = utils.clamp(throttleStep, 0.01, 1)\n\n-- freeze the player in he is remote controlling the construct\nif unit.isRemoteControlled() then\n    player.freeze(1)\nend\n\n-- landing gear\n-- make sure every gears are synchonized with the first\ngearExtended = unit.isAnyLandingGearDeployed()\nif gearExtended then\n    unit.deployLandingGears()\nelse\n    unit.retractLandingGears()\nend\n\n-- forward/backward functions\nstartForward = function ()\n    if Nav:isTravelMode() then\n        brakeInput = 0\n        local throttle = 1\n        if not shiftPressed then\n            local maxGForward = Nav:maxForceForward() / (construct.getTotalMass() * 9.81)\n            throttle = utils.clamp(baseAcceleration / maxGForward, 0, 1)\n        end\n\n        Nav.axisCommandManager:setThrottleCommand(axisCommandId.longitudinal, throttle)\n        goingForward = true\n    end\nend\n\nstopForward = function ()\n    if Nav:isTravelMode() then\n        pitchInput = 0\n        Nav.axisCommandManager:setThrottleCommand(axisCommandId.longitudinal, 0)\n        brakeInput = 0.5\n        goingForward = false\n        if goingBackward then\n            startBackward()\n        end\n    end\nend\n\ndirection = {forward=1, backward = -1}\nloopDirection = function (direction)\n    if Nav:isTravelMode() then\n        local currentVelocity = vec3(construct.getVelocity())\n        local axisCRefDirection = vec3(construct.getOrientationForward())\n\n        lastCurrentSpeed = currentVelocity:dot(axisCRefDirection)\n\n        if (lastCurrentSpeed * direction < 0) then\n            brakeInput = 1\n            autobrake = true\n        else\n            if autobrake == true then\n                autobrake = false\n                brakeInput = 0\n            end\n        end\n    else\n        Nav.axisCommandManager.axisCommands[axisCommandId.longitudinal]:updateCommandFromActionLoop(direction)\n    end\nend\n\nstartBackward = function ()\n    if Nav:isTravelMode() then\n        pitchInput = 0\n        brakeInput = 0\n\n        local maxGBackward = Nav:maxForceBackward() / (construct.getTotalMass() * 9.81)\n        local throttle = utils.clamp(baseAcceleration / maxGBackward, -1, 0)\n\n        Nav.axisCommandManager:setThrottleCommand(axisCommandId.longitudinal, throttle)\n        goingBack = true\n    end\nend\n\nstopBackward = function ()\n    if Nav:isTravelMode() then\n        pitchInput = 0\n        Nav.axisCommandManager:setThrottleCommand(axisCommandId.longitudinal, 0)\n        brakeInput = 0.5\n        goingBack = false\n        if goingForward then\n            startForward()\n        end\n    end\nend\n"
+        },
+        {
+            "key": "1",
+            "filter": {
+                "slotKey": "-1",
+                "signature": "onStop()",
+                "args": []
+            },
+            "code": "_autoconf.hideCategoryPanels()\nif antigrav ~= nil then antigrav.hideWidget() end\nif gyro ~= nil then gyro.hideWidget() end\ncore.hideWidget()\nunit.switchOffHeadlights()\n"
+        },
+        {
+            "key": "2",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onFlush()",
+                "args": []
+            },
+            "code": "-- constants: use 'myvar = defaultValue --export: description' to expose the variable in context menu<br>in degree<br>Valid values: Superior or equal to 1\nlocal rollAmplitude = 30 --export: When turning, the auto roll won't go over or under rollAmplitude<br>in degree<br>Valid values: Superior or equal to 1\nlocal pitchAmplitude = 25 --export: When pitching, the pitch won't go over or under pitchAmplitude (in degree)\nlocal yawSpeedFactor = 1.5 --export When turning, the inputs will be multiplied by this factor<br>Valid values: Superior or equal to 0.01\nlocal yawAccelerationFactor = 3 --export: When turning, the yaw response will be multiplied by this factor<br>Valid values: Superior or equal to 0.01\n\nlocal lateralAntiDriftFactor = 1 --export: When compensating for drift, this factor will increase/decrease the drift force requested to engines<br>Valid values: Superior or equal to 0.01\nlocal lateralStrafeFactor = 5 --export: This factor will increase/decrease the player input along the horizontal strafe axis axis<br>Valid values: Superior or equal to 0.01\n\nlocal brakeSpeedFactor = 1 --export: When braking, this factor will increase the brake force by brakeSpeedFactor * velocity<br>Valid values: Superior or equal to 0.01\nlocal brakeFlatFactor = 4 --export: When braking, this factor will increase the brake force by a flat brakeFlatFactor * velocity direction><br>(higher value may be unstable)<br>Valid values: Superior or equal to 0.01\nlocal autoBrakeSpeed = 15 --export: Auto brake when speed is below that value (in m/s), with no thrust\n\n-- validate params\nbrakeSpeedFactor = math.max(brakeSpeedFactor, 0.01)\nbrakeFlatFactor = math.max(brakeFlatFactor, 0.01)\nrollAmplitude = math.max(rollAmplitude, 1)\npitchAmplitude = math.max(pitchAmplitude, 1)\nyawSpeedFactor = math.max(yawSpeedFactor, 0.01)\nyawAccelerationFactor =  math.max(yawAccelerationFactor, 0.01)\n\nif (rollPID == nil) then\n    rollPID = pid.new(0.2, 0, 10)\n    pitchPID = pid.new(0.2, 0, 10)\nend\n\n-- final inputs\nif unit.isMouseDirectControlActivated() then\n    -- in direct control, we tweak the pitch to behave inbetween virtual joystick and direct control\n    -- this helps a lot for ground construct control\n    pitchInputFromDevice = utils.clamp(pitchInputFromDevice + system.getControlDeviceForwardInput() * system.getActionUpdateDeltaTime(), -1.0, 1.0)\nelse\n    pitchInputFromDevice = system.getControlDeviceForwardInput()\nend\nlocal finalPitchInput = pitchInput + pitchInputFromDevice\nlocal finalRollInput = rollInput + system.getControlDeviceYawInput()\nlocal finalYawInput = yawInput - system.getControlDeviceLeftRightInput()\nlocal combinedRollYawInput = utils.clamp(finalRollInput - finalYawInput, -1.0, 1.0);\nlocal finalVerticalStrafeInput = verticalStrafeInput\nlocal finalLateralStrafeInput = lateralStrafeInput;\nlocal finalBrakeInput = brakeInput\n\n-- Axis\nlocal worldVertical = vec3(core.getWorldVertical())\nlocal constructUp = vec3(construct.getWorldOrientationUp())\nlocal constructForward = vec3(construct.getWorldOrientationForward())\nlocal constructRight = vec3(construct.getWorldOrientationRight())\nlocal constructVelocity = vec3(construct.getWorldVelocity())\nlocal constructVelocityDir = vec3(construct.getWorldVelocity()):normalize()\nlocal constructAngularVelocity = vec3(construct.getWorldAngularVelocity())\nlocal constructYawVelocity = constructAngularVelocity:dot(constructUp)\n\n-- Engine commands\nlocal keepCollinearity = 0 -- for easier reading\nlocal dontKeepCollinearity = 1 -- for easier reading\nlocal tolerancePercentToSkipOtherPriorities = 1 -- if we are within this tolerance (in%), we don't go to the next priorities\n\n-- Rotation\nlocal currentRollDeg = getRoll(worldVertical, constructForward, constructRight)\nlocal currentPitchDeg = -math.asin(constructForward:dot(worldVertical)) * constants.rad2deg\nlocal targetRollDeg =  utils.clamp(combinedRollYawInput * rollAmplitude, -rollAmplitude, rollAmplitude)\nlocal targetPitchDeg =  utils.clamp(finalPitchInput * pitchAmplitude, -pitchAmplitude, pitchAmplitude)\nrollPID:inject(targetRollDeg - currentRollDeg)\npitchPID:inject(targetPitchDeg - currentPitchDeg)\n\nlocal constructYawTargetVelocity = -combinedRollYawInput * yawSpeedFactor\nlocal constructYawTargetAcceleration = yawAccelerationFactor * (constructYawTargetVelocity - constructYawVelocity)\n\nlocal constructTargetAngularVelocity = rollPID:get() * constructForward\n                                        + pitchPID:get() * constructRight\n                                        + constructYawTargetAcceleration * constructUp\n\nNav:setEngineTorqueCommand('torque', constructTargetAngularVelocity, keepCollinearity, 'airfoil', '', '', tolerancePercentToSkipOtherPriorities)\n\n-- Brakes\nif (finalBrakeInput == 0 and autoBrakeSpeed > 0 and Nav.axisCommandManager.throttle == 0 and constructVelocity:len() < autoBrakeSpeed) then\n    finalBrakeInput = 1\nend\nlocal brakeAcceleration = -finalBrakeInput * (brakeSpeedFactor * constructVelocity + brakeFlatFactor * constructVelocityDir)\nNav:setEngineForceCommand('brake', brakeAcceleration)\n\n-- AutoNavigation regroups all the axis command by 'TargetSpeed'\nlocal autoNavigationEngineTags = ''\nlocal autoNavigationAcceleration = vec3()\nlocal autoNavigationUseBrake = false\n\n-- Longitudinal Translation\nlocal longitudinalEngineTags = 'thrust analog longitudinal'\nlocal longitudinalCommandType = Nav.axisCommandManager:getAxisCommandType(axisCommandId.longitudinal)\nif (longitudinalCommandType == axisCommandType.byThrottle) then\n    local longitudinalAcceleration = Nav.axisCommandManager:composeAxisAccelerationFromThrottle(longitudinalEngineTags,axisCommandId.longitudinal)\n    Nav:setEngineForceCommand(longitudinalEngineTags, longitudinalAcceleration, keepCollinearity)\nelseif  (longitudinalCommandType == axisCommandType.byTargetSpeed) then\n    local longitudinalAcceleration = Nav.axisCommandManager:composeAxisAccelerationFromTargetSpeed(axisCommandId.longitudinal)\n    autoNavigationEngineTags = autoNavigationEngineTags .. ' , ' .. longitudinalEngineTags\n    autoNavigationAcceleration = autoNavigationAcceleration + longitudinalAcceleration\n    if (Nav.axisCommandManager:getTargetSpeed(axisCommandId.longitudinal) == 0 or -- we want to stop\n        Nav.axisCommandManager:getCurrentToTargetDeltaSpeed(axisCommandId.longitudinal) < - Nav.axisCommandManager:getTargetSpeedCurrentStep(axisCommandId.longitudinal) * 0.5) -- if the longitudinal velocity would need some braking\n    then\n        autoNavigationUseBrake = true\n    end\n\nend\n\n-- Lateral Translation\nlocal lateralStrafeEngineTags = 'thrust analog lateral'\nlocal lateralCommandType = Nav.axisCommandManager:getAxisCommandType(axisCommandId.lateral)\nif (lateralCommandType == axisCommandType.byThrottle) then\n    local lateralStrafeAcceleration =  Nav.axisCommandManager:composeAxisAccelerationFromThrottle(lateralStrafeEngineTags,axisCommandId.lateral)\n    Nav:setEngineForceCommand(lateralStrafeEngineTags, lateralStrafeAcceleration, keepCollinearity)\nelseif  (lateralCommandType == axisCommandType.byTargetSpeed) then\n    local lateralAcceleration = Nav.axisCommandManager:composeAxisAccelerationFromTargetSpeed(axisCommandId.lateral)\n    autoNavigationEngineTags = autoNavigationEngineTags .. ' , ' .. lateralStrafeEngineTags\n    autoNavigationAcceleration = autoNavigationAcceleration + lateralAcceleration\nend\n\n-- Vertical Translation\nlocal verticalStrafeEngineTags = 'thrust analog vertical'\nlocal verticalCommandType = Nav.axisCommandManager:getAxisCommandType(axisCommandId.vertical)\nif (verticalCommandType == axisCommandType.byThrottle) then\n    local verticalStrafeAcceleration = Nav.axisCommandManager:composeAxisAccelerationFromThrottle(verticalStrafeEngineTags,axisCommandId.vertical)\n    Nav:setEngineForceCommand(verticalStrafeEngineTags, verticalStrafeAcceleration, keepCollinearity, 'airfoil', 'ground', '', tolerancePercentToSkipOtherPriorities)\nelseif  (verticalCommandType == axisCommandType.byTargetSpeed) then\n    local verticalAcceleration = Nav.axisCommandManager:composeAxisAccelerationFromTargetSpeed(axisCommandId.vertical)\n    autoNavigationEngineTags = autoNavigationEngineTags .. ' , ' .. verticalStrafeEngineTags\n    autoNavigationAcceleration = autoNavigationAcceleration + verticalAcceleration\nend\n\n-- Auto Navigation (Cruise Control)\nif (autoNavigationAcceleration:len() > constants.epsilon) then\n    if (brakeInput ~= 0 or autoNavigationUseBrake or math.abs(constructVelocityDir:dot(constructForward)) < 0.95)  -- if the velocity is not properly aligned with the forward\n    then\n        autoNavigationEngineTags = autoNavigationEngineTags .. ', brake'\n    end\n    Nav:setEngineForceCommand(autoNavigationEngineTags, autoNavigationAcceleration, dontKeepCollinearity, '', '', '', tolerancePercentToSkipOtherPriorities)\nend\n\n-- Rockets\nNav:setBoosterCommand('rocket_engine')\n"
+        },
+        {
+            "key": "3",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onUpdate()",
+                "args": []
+            },
+            "code": "Nav:update()\nif system.getThrottleInputFromMouseWheel() ~= 0.0 then\n    brakeInput = 0\nend\n\nif unit.isMouseControlActivated() then\n    local currentVelocity = vec3(construct.getVelocity())\n    local axisCRefDirection = vec3(construct.getOrientationForward())\n    local v = currentVelocity:dot(axisCRefDirection)\n    local minv = 20\n    local maxPitch = 0.4\n    if v < minv or not goingForward then\n        pitchInput = 0\n    else\n        if not goingBack and goingForward then\n            pitchInput = utils.clamp((maxPitch/minv) * (v - minv), 0, maxPitch)\n        end\n    end\nend\n\npitchInput = pitchInput + jumpDelta\n"
+        },
+        {
+            "key": "4",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStart(gear)",
+                "args": [
+                    {
+                        "value": "gear"
+                    }
+                ]
+            },
+            "code": "gearExtended = not gearExtended\nif gearExtended then\n    unit.deployLandingGears()\nelse\n    unit.retractLandingGears()\nend\n"
+        },
+        {
+            "key": "5",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStart(light)",
+                "args": [
+                    {
+                        "value": "light"
+                    }
+                ]
+            },
+            "code": "if unit.isAnyHeadlightSwitchedOn() then\n    unit.switchOffHeadlights()\nelse\n    unit.switchOnHeadlights()\nend\n"
+        },
+        {
+            "key": "6",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionLoop(backward)",
+                "args": [
+                    {
+                        "value": "backward"
+                    }
+                ]
+            },
+            "code": "loopDirection(direction.backward)"
+        },
+        {
+            "key": "7",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStart(backward)",
+                "args": [
+                    {
+                        "value": "backward"
+                    }
+                ]
+            },
+            "code": "startBackward()"
+        },
+        {
+            "key": "8",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStop(backward)",
+                "args": [
+                    {
+                        "value": "backward"
+                    }
+                ]
+            },
+            "code": "stopBackward()"
+        },
+        {
+            "key": "9",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionLoop(forward)",
+                "args": [
+                    {
+                        "value": "forward"
+                    }
+                ]
+            },
+            "code": "loopDirection(direction.forward)"
+        },
+        {
+            "key": "10",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStart(forward)",
+                "args": [
+                    {
+                        "value": "forward"
+                    }
+                ]
+            },
+            "code": "startForward()"
+        },
+        {
+            "key": "11",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStop(forward)",
+                "args": [
+                    {
+                        "value": "forward"
+                    }
+                ]
+            },
+            "code": "stopForward()"
+        },
+        {
+            "key": "12",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStart(lshift)",
+                "args": [
+                    {
+                        "value": "lshift"
+                    }
+                ]
+            },
+            "code": "shiftPressed = true\nif goingForward then\n    Nav.axisCommandManager:setThrottleCommand(axisCommandId.longitudinal, 1)\nend\n"
+        },
+        {
+            "key": "13",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStop(lshift)",
+                "args": [
+                    {
+                        "value": "lshift"
+                    }
+                ]
+            },
+            "code": "shiftPressed = false\nif goingForward then\n    local maxGForward = Nav:maxForceForward() / (construct.getTotalMass() * 9.81)\n    local throttle = utils.clamp(baseAcceleration / maxGForward, 0, 1)\n    Nav.axisCommandManager:setThrottleCommand(axisCommandId.longitudinal, throttle)\nend\n"
+        },
+        {
+            "key": "14",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStart(left)",
+                "args": [
+                    {
+                        "value": "left"
+                    }
+                ]
+            },
+            "code": "rollInput = rollInput - 1"
+        },
+        {
+            "key": "15",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStop(left)",
+                "args": [
+                    {
+                        "value": "left"
+                    }
+                ]
+            },
+            "code": "rollInput = rollInput + 1"
+        },
+        {
+            "key": "16",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStart(right)",
+                "args": [
+                    {
+                        "value": "right"
+                    }
+                ]
+            },
+            "code": "rollInput = rollInput + 1"
+        },
+        {
+            "key": "17",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStop(right)",
+                "args": [
+                    {
+                        "value": "right"
+                    }
+                ]
+            },
+            "code": "rollInput = rollInput - 1"
+        },
+        {
+            "key": "18",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStart(straferight)",
+                "args": [
+                    {
+                        "value": "straferight"
+                    }
+                ]
+            },
+            "code": "Nav.axisCommandManager:updateCommandFromActionStart(axisCommandId.lateral, 1.0)"
+        },
+        {
+            "key": "19",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStop(straferight)",
+                "args": [
+                    {
+                        "value": "straferight"
+                    }
+                ]
+            },
+            "code": "Nav.axisCommandManager:updateCommandFromActionStop(axisCommandId.lateral, -1.0)"
+        },
+        {
+            "key": "20",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStart(strafeleft)",
+                "args": [
+                    {
+                        "value": "strafeleft"
+                    }
+                ]
+            },
+            "code": "Nav.axisCommandManager:updateCommandFromActionStart(axisCommandId.lateral, -1.0)"
+        },
+        {
+            "key": "21",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStop(strafeleft)",
+                "args": [
+                    {
+                        "value": "strafeleft"
+                    }
+                ]
+            },
+            "code": "Nav.axisCommandManager:updateCommandFromActionStop(axisCommandId.lateral, 1.0)"
+        },
+        {
+            "key": "22",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStart(up)",
+                "args": [
+                    {
+                        "value": "up"
+                    }
+                ]
+            },
+            "code": "baseAltitude = Nav:getTargetGroundAltitude()\nNav.axisCommandManager:setTargetGroundAltitude(baseAltitude + 4)\n"
+        },
+        {
+            "key": "23",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionLoop(up)",
+                "args": [
+                    {
+                        "value": "up"
+                    }
+                ]
+            },
+            "code": "if unit.isMouseControlActivated() then\n    jumpDelta = utils.clamp(jumpDelta + 0.01, 0, 0.6)\nend\n"
+        },
+        {
+            "key": "24",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStop(up)",
+                "args": [
+                    {
+                        "value": "up"
+                    }
+                ]
+            },
+            "code": "Nav.axisCommandManager:setTargetGroundAltitude(baseAltitude)\nif unit.isMouseControlActivated() then\n    jumpDelta = 0\nend\n"
+        },
+        {
+            "key": "25",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStart(down)",
+                "args": [
+                    {
+                        "value": "down"
+                    }
+                ]
+            },
+            "code": "Nav.axisCommandManager:deactivateGroundEngineAltitudeStabilization()\nNav.axisCommandManager:updateCommandFromActionStart(axisCommandId.vertical, -1.0)\n"
+        },
+        {
+            "key": "26",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStop(down)",
+                "args": [
+                    {
+                        "value": "down"
+                    }
+                ]
+            },
+            "code": "Nav.axisCommandManager:updateCommandFromActionStop(axisCommandId.vertical, 1.0)\nNav.axisCommandManager:activateGroundEngineAltitudeStabilization(defaultGroundAltitudeStabilization)\n"
+        },
+        {
+            "key": "27",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStart(groundaltitudeup)",
+                "args": [
+                    {
+                        "value": "groundaltitudeup"
+                    }
+                ]
+            },
+            "code": "Nav.axisCommandManager:updateTargetGroundAltitudeFromActionStart(1.0)"
+        },
+        {
+            "key": "28",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionLoop(groundaltitudeup)",
+                "args": [
+                    {
+                        "value": "groundaltitudeup"
+                    }
+                ]
+            },
+            "code": "Nav.axisCommandManager:updateTargetGroundAltitudeFromActionLoop(1.0)\njumpDelta = 0\n"
+        },
+        {
+            "key": "29",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStart(groundaltitudedown)",
+                "args": [
+                    {
+                        "value": "groundaltitudedown"
+                    }
+                ]
+            },
+            "code": "Nav.axisCommandManager:updateTargetGroundAltitudeFromActionStart(-1.0)"
+        },
+        {
+            "key": "30",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionLoop(groundaltitudedown)",
+                "args": [
+                    {
+                        "value": "groundaltitudedown"
+                    }
+                ]
+            },
+            "code": "Nav.axisCommandManager:updateTargetGroundAltitudeFromActionLoop(-1.0)"
+        },
+        {
+            "key": "31",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStart(yawright)",
+                "args": [
+                    {
+                        "value": "yawright"
+                    }
+                ]
+            },
+            "code": "yawInput = yawInput - 1"
+        },
+        {
+            "key": "32",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStop(yawright)",
+                "args": [
+                    {
+                        "value": "yawright"
+                    }
+                ]
+            },
+            "code": "yawInput = yawInput + 1"
+        },
+        {
+            "key": "33",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStart(yawleft)",
+                "args": [
+                    {
+                        "value": "yawleft"
+                    }
+                ]
+            },
+            "code": "yawInput = yawInput + 1"
+        },
+        {
+            "key": "34",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStop(yawleft)",
+                "args": [
+                    {
+                        "value": "yawleft"
+                    }
+                ]
+            },
+            "code": "yawInput = yawInput - 1"
+        },
+        {
+            "key": "35",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStart(brake)",
+                "args": [
+                    {
+                        "value": "brake"
+                    }
+                ]
+            },
+            "code": "brakeInput = brakeInput + 1\nlocal longitudinalCommandType = Nav.axisCommandManager:getAxisCommandType(axisCommandId.longitudinal)\nif (longitudinalCommandType == axisCommandType.byTargetSpeed) then\n    local targetSpeed = Nav.axisCommandManager:getTargetSpeed(axisCommandId.longitudinal)\n    if (math.abs(targetSpeed) > constants.epsilon) then\n        Nav.axisCommandManager:updateCommandFromActionStart(axisCommandId.longitudinal, - utils.sign(targetSpeed))\n    end\nend\n"
+        },
+        {
+            "key": "36",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStop(brake)",
+                "args": [
+                    {
+                        "value": "brake"
+                    }
+                ]
+            },
+            "code": "brakeInput = 0"
+        },
+        {
+            "key": "37",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionLoop(brake)",
+                "args": [
+                    {
+                        "value": "brake"
+                    }
+                ]
+            },
+            "code": "local longitudinalCommandType = Nav.axisCommandManager:getAxisCommandType(axisCommandId.longitudinal)\nif (longitudinalCommandType == axisCommandType.byTargetSpeed) then\n    local targetSpeed = Nav.axisCommandManager:getTargetSpeed(axisCommandId.longitudinal)\n    if (math.abs(targetSpeed) > constants.epsilon) then\n        Nav.axisCommandManager:updateCommandFromActionLoop(axisCommandId.longitudinal, - utils.sign(targetSpeed))\n    end\nend\n"
+        },
+        {
+            "key": "38",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStart(booster)",
+                "args": [
+                    {
+                        "value": "booster"
+                    }
+                ]
+            },
+            "code": "Nav:toggleBoosters()"
+        },
+        {
+            "key": "39",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStart(stopengines)",
+                "args": [
+                    {
+                        "value": "stopengines"
+                    }
+                ]
+            },
+            "code": "Nav.axisCommandManager:resetCommand(axisCommandId.longitudinal)"
+        },
+        {
+            "key": "40",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionLoop(speedup)",
+                "args": [
+                    {
+                        "value": "speedup"
+                    }
+                ]
+            },
+            "code": "loopDirection(direction.forward)"
+        },
+        {
+            "key": "41",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStart(speedup)",
+                "args": [
+                    {
+                        "value": "speedup"
+                    }
+                ]
+            },
+            "code": "startForward()"
+        },
+        {
+            "key": "42",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStop(speedup)",
+                "args": [
+                    {
+                        "value": "speedup"
+                    }
+                ]
+            },
+            "code": "stopForward()"
+        },
+        {
+            "key": "43",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStart(speeddown)",
+                "args": [
+                    {
+                        "value": "speeddown"
+                    }
+                ]
+            },
+            "code": "startBackward()"
+        },
+        {
+            "key": "44",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStop(speeddown)",
+                "args": [
+                    {
+                        "value": "speeddown"
+                    }
+                ]
+            },
+            "code": "stopBackward()"
+        },
+        {
+            "key": "45",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionLoop(speeddown)",
+                "args": [
+                    {
+                        "value": "speeddown"
+                    }
+                ]
+            },
+            "code": "loopDirection(direction.backward)"
+        },
+        {
+            "key": "46",
+            "filter": {
+                "slotKey": "-4",
+                "signature": "onActionStart(antigravity)",
+                "args": [
+                    {
+                        "value": "antigravity"
+                    }
+                ]
+            },
+            "code": "if antigrav ~= nil then antigrav.toggle() end"
+        }
+    ],
+    "methods": [],
+    "events": []
+}
